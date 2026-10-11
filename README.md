@@ -69,15 +69,15 @@ Playwright records page content from page creation to context closure. It does *
 
 ## Publication and submission
 
-This working folder initially had no Git repository or remote. Publish to your chosen GitHub/Bitbucket repository and provide its actual URL with the submission. Do not include dependencies, browser binaries or secrets in Git; `.gitignore` excludes generated output.
+Repository: https://github.com/paulan12/Luftborn-Automation (private). Grant your reviewer access before sharing the submission URL. Do not include dependencies, browser binaries or secrets in Git; `.gitignore` excludes generated output.
 
 After obtaining a successful run and the full desktop recording, create the ZIP:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/package.ps1 -RepositoryUrl https://github.com/OWNER/REPOSITORY
+powershell -ExecutionPolicy Bypass -File scripts/package.ps1 -RepositoryUrl https://github.com/paulan12/Luftborn-Automation
 ```
 
 This creates `deliverables/Luftborn-Automation.zip` with source, lockfile, documentation, reports and recordings, excluding `node_modules` and browser binaries. `SUBMISSION-STATUS.txt` records the supplied repository URL. Without a URL it explicitly marks publication as pending. Check the JUnit report and recording before submission.
 ## Verified execution
 
-On 2026-10-11, `npm.cmd run typecheck` passed and `npm.cmd run test:headless` passed the full live flow using bundled Chromium. eBay reported 69 results before filtering and 47 after clicking Manual in the left sidebar. These are observed run values, not hard-coded expectations. The generated report includes the successful page video and trace. Repository publication and the literal desktop launch-to-close recording remain separate submission steps.
+On 2026-10-11, `npm.cmd run typecheck` passed and `npm.cmd run test:headless` passed the full live flow using bundled Chromium. eBay reported 69 results before filtering and 47 after clicking Manual in the left sidebar. These are observed run values, not hard-coded expectations. The generated report includes the successful page video and trace. The source is published to the private paulan12 repository linked above. The literal desktop launch-to-close recording remains a separate submission step.
