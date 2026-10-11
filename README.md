@@ -8,7 +8,7 @@ Each scenario produces three independent test cases in the report:
 
 1. **TC01 - Homepage:** Open https://www.ebay.com/ and verify the URL, title, logo and search controls.
 2. **TC02 - Search before filtering:** Open the homepage, set the isolated test session shipping destination from JSON, then search for `mazda mx-5`, verify the query, results heading and visible listings, and log the total reported by eBay and number of listings on the page. Rounded totals are labelled as lower bounds.
-3. **TC03 - Results after filtering:** Open the homepage, set the destination and search, then click `Transmission` > `Manual` in the left sidebar, verify the checked checkbox and URL refinement, and require visible results and a positive count.
+3. **TC03 - Results after filtering:** Open the homepage, set the destination and search, then click `Transmission` > `Manual` in the left sidebar, verify the checked checkbox and URL refinement, and require visible results and a positive car count read directly from the number beside `Manual` in the sidebar. This count is logged before selection and after filtering; the results heading is logged separately.
 
 There is no URL or dialog fallback for step 3. If eBay does not offer that sidebar control, the test fails instead of claiming to have completed the required interaction. Counts before/after are logged but not compared as a fixed invariant: live inventory and approximate counts can change.
 
@@ -51,7 +51,7 @@ Page objects encapsulate selectors and actions; tests own assertions. Each test 
 | Object | Locator ownership and behavior |
 | --- | --- |
 | `src/pages/HomePage.ts` | `logo`, `searchInput`, `searchButton`; opening the homepage and searching |
-| `src/pages/SearchResultsPage.ts` | `resultCountHeading`, `resultItems`, `leftRail`; `filterGroup()`, `filterOption()` and `filterCheckbox()` for dynamic filters |
+| `src/pages/SearchResultsPage.ts` | `resultCountHeading`, `resultItems`, `leftRail`; `filterGroup()`, `filterOption()` and `filterCheckbox()` for dynamic filters; `getFilterResultCount()` reads the count beside the option |
 | `src/pages/components/ShippingDestination.ts` | Header location button, shipping dialog, close button, iframe country/postal fields and Confirm button; popup handling and destination selection |
 | `src/pages/BasePage.ts` | Shared error-page locators, browser actions, screenshots and bounded recovery |
 | `src/fixtures.ts` | Creates/injects the `homePage` page object and registers the shipping component handler |
@@ -100,3 +100,7 @@ On 2026-10-11, the POM refactor passed TypeScript checking, three offline framew
 The earlier TC03 report showed repeated eBay error pages after the Manual click. The current bounded backoff allows recovery but cannot guarantee availability of the external site. Persistent errors still fail the test.
 
 The source is published to the private paulan12 repository linked above. The literal desktop launch-to-close recording remains a separate submission step.
+
+### Sidebar car-count verification
+
+The subsequent TC03-only run on 2026-10-11 passed with the JSON-configured US destination. It read 46 beside Manual before clicking and 47 beside the selected Manual option after navigation. The heading was logged separately. The two observed sidebar values are not assumed equal across page loads. The latest generated report contains this TC03-only verification; run the full suite to regenerate all three cases.

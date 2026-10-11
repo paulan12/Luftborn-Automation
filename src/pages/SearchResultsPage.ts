@@ -69,6 +69,22 @@ export class SearchResultsPage extends BasePage {
     return this.filterGroup(group).locator(`input[type="checkbox"][value="${value}"]`);
   }
 
+  /** Read the car count beside the sidebar option, for example Manual (47). */
+  async getFilterResultCount(group: string, value: string): Promise<number> {
+    return test.step(`Read count beside ${group} -> ${value}`, async () => {
+      const option = this.filterOption(group, value);
+      if (!(await this.isVisible(option, 2_000)) && await this.isVisible(this.filterGroupHeading(group))) {
+        await this.click(this.filterGroupHeading(group), `"${group}" filter group`);
+      }
+      const label = (await this.getText(option)).replace(/\s+/g, ' ').trim();
+      const match = label.match(/\(\s*([\d,]+)\s*\)/);
+      if (!match) {
+        throw new Error(`Cannot read the count beside "${value}" in "${group}": "${label}"`);
+      }
+      return Number(match[1].replace(/,/g, ''));
+    });
+  }
+
   /** The assignment requires an actual click in the left sidebar. */
   async applyFilter(group: string, value: string): Promise<void> {
     await test.step(`Apply left-sidebar filter ${group} -> ${value}`, async () => {

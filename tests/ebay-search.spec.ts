@@ -49,7 +49,10 @@ for (const scenario of data.scenarios) {
       const resultsPage = await homePage.search(scenario.searchTerm);
       await expect(resultsPage.resultItems.first()).toBeVisible();
       const { group, value } = scenario.filter;
-      const countBefore = await resultsPage.getResultCount();
+      const carsBefore = await resultsPage.getFilterResultCount(group, value);
+      expect(carsBefore).toBeGreaterThanOrEqual(scenario.minimumExpectedResults);
+      logger.info(`Cars shown beside ${value} before selection: ${carsBefore}`);
+      await resultsPage.takeScreenshot('manual-count-before-filter');
 
       await resultsPage.applyFilter(group, value);
 
@@ -58,9 +61,10 @@ for (const scenario of data.scenarios) {
       await expect(resultsPage.filterCheckbox(group, value)).toBeChecked();
       await expect(resultsPage.resultItems.first()).toBeVisible();
 
-      const countAfter = await resultsPage.getResultCount();
-      expect(countAfter).toBeGreaterThanOrEqual(scenario.minimumExpectedResults);
-      logger.info(`Number of results after filtering by ${group} = ${value}: ${countAfter} (before: ${countBefore})`);
+      const manualCars = await resultsPage.getFilterResultCount(group, value);
+      expect(manualCars).toBeGreaterThanOrEqual(scenario.minimumExpectedResults);
+      logger.info(`Number of cars from the count beside ${value}: ${manualCars}`);
+      logger.info(`Filtered results heading (separate from sidebar count): ${await resultsPage.getResultCountText()}`);
       await resultsPage.takeScreenshot('filtered-results');
     });
   });
