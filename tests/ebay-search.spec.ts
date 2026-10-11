@@ -1,5 +1,4 @@
 import { expect, test } from '../src/fixtures';
-import { HomePage } from '../src/pages/HomePage';
 import { logger } from '../src/utils/logger';
 import { EbaySearchData, readJson } from '../src/utils/testDataReader';
 
@@ -8,8 +7,7 @@ const data = readJson<EbaySearchData>('ebay-search.json');
 for (const scenario of data.scenarios) {
   test.describe(`eBay search: ${scenario.name}`, () => {
 
-    test('TC01 - Navigate to eBay and validate landing on the main page', async ({ page }) => {
-      const homePage = new HomePage(page);
+    test('TC01 - Navigate to eBay and validate landing on the main page', async ({ page, homePage }) => {
       await homePage.open(data.baseUrl);
 
       await expect(page).toHaveURL(new RegExp(data.homePage.expectedUrlPattern));
@@ -20,8 +18,7 @@ for (const scenario of data.scenarios) {
       await homePage.takeScreenshot('home-page');
     });
 
-    test(`TC02 - Search for "${scenario.searchTerm}" and validate results before filtering`, async ({ page }) => {
-      const homePage = new HomePage(page);
+    test(`TC02 - Search for "${scenario.searchTerm}" and validate results before filtering`, async ({ page, homePage }) => {
       await homePage.open(data.baseUrl);
       await homePage.setShippingDestination(data.shippingDestination.country, data.shippingDestination.postalCode);
       const resultsPage = await homePage.search(scenario.searchTerm);
@@ -46,8 +43,7 @@ for (const scenario of data.scenarios) {
       await resultsPage.takeScreenshot('search-results');
     });
 
-    test(`TC03 - Apply "${scenario.filter.group}" -> "${scenario.filter.value}" and validate filtered results`, async ({ page }) => {
-      const homePage = new HomePage(page);
+    test(`TC03 - Apply "${scenario.filter.group}" -> "${scenario.filter.value}" and validate filtered results`, async ({ page, homePage }) => {
       await homePage.open(data.baseUrl);
       await homePage.setShippingDestination(data.shippingDestination.country, data.shippingDestination.postalCode);
       const resultsPage = await homePage.search(scenario.searchTerm);

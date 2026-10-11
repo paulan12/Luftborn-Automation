@@ -46,6 +46,18 @@ The supplied test destination is United States / 10001. The live diagnostic show
 
 Page objects encapsulate selectors and actions; tests own assertions. Each test case gets an isolated context managed by Playwright, ensuring cleanup and finalizing video on success or failure.
 
+## Page Object Model and locator map
+
+| Object | Locator ownership and behavior |
+| --- | --- |
+| `src/pages/HomePage.ts` | `logo`, `searchInput`, `searchButton`; opening the homepage and searching |
+| `src/pages/SearchResultsPage.ts` | `resultCountHeading`, `resultItems`, `leftRail`; `filterGroup()`, `filterOption()` and `filterCheckbox()` for dynamic filters |
+| `src/pages/components/ShippingDestination.ts` | Header location button, shipping dialog, close button, iframe country/postal fields and Confirm button; popup handling and destination selection |
+| `src/pages/BasePage.ts` | Shared error-page locators, browser actions, screenshots and bounded recovery |
+| `src/fixtures.ts` | Creates/injects the `homePage` page object and registers the shipping component handler |
+
+The three scenario tests contain business assertions and calls to page objects; they do not define CSS selectors. Static locators are declared as named properties and initialized in constructors. Parameterized filter locators are methods on `SearchResultsPage`. `HomePage.search()` returns that page object. The compatibility popup utility delegates to the shipping component and contains no selectors.
+
 ## Reports and video evidence
 
 Each run replaces the preceding generated report:
@@ -66,7 +78,7 @@ The separate `test:checks` command runs an offline regression test for the shipp
 
 - Missing browser/FFmpeg: run `npm.cmd run setup:browsers`.
 - Connection/download denied: allow access to the Playwright download host and eBay, then retry.
-- eBay error page: the framework retries with bounded backoff, then fails with a diagnostic. A bot challenge fails explicitly; no bypass is attempted.
+- eBay error page: The recorded TC03 failure occurred after clicking Manual: eBay repeatedly returned its "Something went wrong" page. Recovery time is not guaranteed. The framework reloads with bounded backoff (up to 3 minutes per page), then fails with a diagnostic. `BROWSER_CHANNEL=chrome` is available as an optional browser choice. A bot challenge fails explicitly; no bypass is attempted.
 - Missing Transmission sidebar: inspect the screenshot/trace and the category/inventory eBay actually returned. Parts/accessories search results may not offer vehicle transmission filters. The framework must not manufacture a selected filter using URL parameters.
 - Title/markup changes: inspect the report before updating external expectations or page object selectors.
 
@@ -83,6 +95,8 @@ powershell -ExecutionPolicy Bypass -File scripts/package.ps1 -RepositoryUrl http
 This creates `deliverables/Luftborn-Automation.zip` with source, lockfile, documentation, reports and recordings, excluding `node_modules` and browser binaries. `SUBMISSION-STATUS.txt` records the supplied repository URL. Without a URL it explicitly marks publication as pending. Check the JUnit report and recording before submission.
 ## Verified execution
 
-On 2026-10-11, TypeScript checking and the offline shipping-popup regression check passed. The revised live suite passed all three independent test cases (homepage, search before filtering, results after filtering). TC02 reported 7,000+ results; TC03's separate session reported 69 before filtering and 46 after clicking Manual. These are observed live values, not hard-coded expectations; separate sessions can receive different inventory/results from eBay. Each case has its own video and trace in the report.
+On 2026-10-11, the POM refactor passed TypeScript checking, three offline framework checks (popup interception, transient server-error recovery, persistent-error failure), and all three live eBay test cases. TC02 reported 69 results. TC03 clicked Manual and verified 47 results from 69 before filtering. These are observed values, not fixed expectations. Each live case has a separate video and trace.
+
+The earlier TC03 report showed repeated eBay error pages after the Manual click. The current bounded backoff allows recovery but cannot guarantee availability of the external site. Persistent errors still fail the test.
 
 The source is published to the private paulan12 repository linked above. The literal desktop launch-to-close recording remains a separate submission step.

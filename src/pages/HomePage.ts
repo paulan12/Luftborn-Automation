@@ -1,15 +1,17 @@
 import { Locator, Page, test } from '@playwright/test';
-import { registerPopupHandlers } from '../utils/popupHandlers';
+import { ShippingDestination } from './components/ShippingDestination';
 import { BasePage } from './BasePage';
 import { SearchResultsPage } from './SearchResultsPage';
 
 export class HomePage extends BasePage {
+  readonly shippingDestination: ShippingDestination;
   readonly logo: Locator;
   readonly searchInput: Locator;
   readonly searchButton: Locator;
 
   constructor(page: Page) {
     super(page);
+    this.shippingDestination = new ShippingDestination(page);
     this.logo = page.locator('#gh-logo');
     this.searchInput = page.locator('input[name="_nkw"]');
     this.searchButton = page.locator('#gh-search-btn, #gh-btn').first();
@@ -21,23 +23,8 @@ export class HomePage extends BasePage {
   }
 
   async setShippingDestination(country: string, postalCode: string): Promise<void> {
-    await test.step(`Set test shipping destination to ${country}, ${postalCode}`, async () => {
-      const locationButton = this.page.locator('button.gh-ship-to__menu');
-      await this.click(locationButton, 'shipping destination');
-      // Keep the handler active during the click so an existing or late popup cannot block it.
-      // Disable it only after opening the intentional dialog, and always restore it.
-      await this.page.removeLocatorHandler(this.page.locator('[role="dialog"].address-dialog__lightbox'));
-      try {
-        const dialog = this.page.frameLocator('[role="dialog"] iframe');
-        await dialog.getByRole('combobox', { name: 'Country or Region' }).selectOption({ label: country });
-        await dialog.getByRole('textbox', { name: 'Zipcode' }).fill(postalCode);
-        await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
-        await this.page.locator('[role="dialog"] iframe').waitFor({ state: 'hidden' });
-        await this.waitForPageReady(this.searchInput);
-      } finally {
-        await registerPopupHandlers(this.page);
-      }
-    });
+    await this.shippingDestination.selectDestination(country, postalCode);
+    await this.waitForPageReady(this.searchInput);
   }
 
   async search(term: string): Promise<SearchResultsPage> {

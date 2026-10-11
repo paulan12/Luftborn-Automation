@@ -18,7 +18,8 @@ const channel = process.env.BROWSER_CHANNEL ?? 'chromium';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 240_000,
+  // Home, search and filter pages can each sit out eBay's throttling for up to 3 minutes.
+  timeout: 600_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,

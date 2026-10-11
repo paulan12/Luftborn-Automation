@@ -16,12 +16,13 @@ export abstract class BasePage {
   }
 
   /**
-   * Waits until `readyLocator` is visible. eBay intermittently serves a "Something went wrong"
-   * page (especially after many requests in a row from the same IP), so reload with a growing
-   * back-off before giving up.
+   * Waits for real page content and retries the observed server-error page with bounded backoff.
+   * The generic error message alone does not establish an HTTP status or guarantee recovery.
+   * `maxWaitMs` bounds backoff time; navigation/action timeouts apply separately.
    */
-  async waitForPageReady(readyLocator: Locator, maxReloads = 4): Promise<void> {
+  async waitForPageReady(readyLocator: Locator, maxWaitMs = 180_000): Promise<void> {
     await this.waitForPageLoad();
+    let waited = 0;
     for (let attempt = 1; ; attempt++) {
       await readyLocator.or(this.errorPageMessage).or(this.botChallengeHeading).first().waitFor({ state: 'visible' });
       if (await readyLocator.first().isVisible()) return;
@@ -29,13 +30,21 @@ export abstract class BasePage {
       if (await this.botChallengeHeading.isVisible()) {
         throw new Error('eBay is showing a bot-check page ("Pardon Our Interruption"). Wait a few minutes and re-run.');
       }
-      if (attempt > maxReloads) {
-        throw new Error(`eBay kept returning its error page after ${maxReloads} reloads.`);
+      if (waited >= maxWaitMs) {
+        throw new Error(
+          `eBay kept returning its error page after waiting ${waited / 1000}s across ${attempt - 1} reloads. ` +
+            'Inspect the trace network responses and retry later; the site did not return usable content.',
+        );
       }
-      const delay = attempt * 10_000;
-      logger.warn(`eBay returned "Something went wrong" page, reloading in ${delay / 1000}s (attempt ${attempt}/${maxReloads})`);
+      const delay = Math.min(attempt * 15_000, 60_000, maxWaitMs - waited);
+      logger.warn(`eBay returned "Something went wrong" page, reloading in ${delay / 1000}s (waited ${waited / 1000}s of ${maxWaitMs / 1000}s)`);
       await this.page.waitForTimeout(delay);
-      await this.page.reload({ waitUntil: 'domcontentloaded' });
+      waited += delay;
+      // eBay may answer the reload with its "Checking your browser" splash, whose own redirect
+      // aborts the reload navigation. The next loop iteration waits for whichever page lands.
+      await this.page.reload({ waitUntil: 'domcontentloaded' }).catch((error: Error) => {
+        if (!error.message.includes('ERR_ABORTED')) throw error;
+      });
     }
   }
 
