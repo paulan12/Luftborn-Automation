@@ -41,22 +41,24 @@ The supplied test destination is United States / 10001. The live diagnostic show
 - `src/pages/SearchResultsPage.ts`: result counts and sidebar filter behavior.
 - `src/fixtures.ts`: managed per-test page and shipping-dialog handler.
 - `src/utils/`: test data loading and console/report logging.
-- `tests/ebay-search.spec.ts`: business flow and assertions.
+- `tests/ebay-search.spec.ts`: the three data-driven flows, calling page actions and assertion methods.
 - `playwright.config.ts`: browser settings, HTML/JUnit reports, video, screenshots and traces.
 
-Page objects encapsulate selectors and actions; tests own assertions. Each test case gets an isolated context managed by Playwright, ensuring cleanup and finalizing video on success or failure.
+Locator classes define selectors. Page objects own actions and assertions. Tests describe the flow. Each test case gets an isolated context managed by Playwright, ensuring cleanup and finalizing video on success or failure.
 
-## Page Object Model and locator map
+## Page Object Model and folder responsibilities
 
-| Object | Locator ownership and behavior |
+| Folder | Responsibility |
 | --- | --- |
-| `src/pages/HomePage.ts` | `logo`, `searchInput`, `searchButton`; opening the homepage and searching |
-| `src/pages/SearchResultsPage.ts` | `resultCountHeading`, `resultItems`, `leftRail`; `filterGroup()`, `filterOption()` and `filterCheckbox()` for dynamic filters; `getFilterResultCount()` reads the count beside the option |
-| `src/pages/components/ShippingDestination.ts` | Header location button, shipping dialog, close button, iframe country/postal fields and Confirm button; popup handling and destination selection |
-| `src/pages/BasePage.ts` | Shared error-page locators, browser actions, screenshots and bounded recovery |
-| `src/fixtures.ts` | Creates/injects the `homePage` page object and registers the shipping component handler |
+| `src/locators` | All selector definitions, including dynamic filter locators |
+| `src/pages` | Page actions, assertions, logging and screenshots |
+| `tests` | The three scenario flows, using external data and page methods |
 
-The three scenario tests contain business assertions and calls to page objects; they do not define CSS selectors. Static locators are declared as named properties and initialized in constructors. Parameterized filter locators are methods on `SearchResultsPage`. `HomePage.search()` returns that page object. The compatibility popup utility delegates to the shipping component and contains no selectors.
+Locator files: `HomeLocators.ts`, `SearchResultsLocators.ts`, `ShippingLocators.ts`, and `CommonLocators.ts`.
+
+Assertions: `HomePage.assertMainPage()` checks the homepage. `SearchResultsPage.assertSearchResults()` checks and logs the search heading. `assertFilterAvailable()` checks the count beside Manual before selecting it; `assertFilteredResults()` checks the selected filter and filtered car count. These methods include named report steps.
+
+The test file contains no selectors or direct `expect` assertions. Page classes consume locator objects without defining selectors. Framework regression checks in `checks` remain separate from the three business tests.
 
 ## Reports and video evidence
 
@@ -110,3 +112,7 @@ The subsequent TC03-only run on 2026-10-11 passed with the JSON-configured US de
 The previous policy could wait three minutes per error page and ten minutes per test. It now retries an error page only once after five seconds. Every live test attaches `page-response-statuses` with main-document URLs and HTTP statuses; HTTP errors are also logged. A persistent-error regression test verified exactly one reload.
 
 The latest visible-browser TC03 run passed in 21.6 seconds (24.9 seconds including runner overhead), reporting 47 beside Manual before clicking and 46 after. No error page occurred in that run. This limits waiting; it does not guarantee that eBay will stop returning errors. The manual browser and isolated test session have different session state, and the exact reason for the intermittent site error remains unconfirmed.
+
+### Locator/assertion separation verification
+
+After separating `src/locators`, `src/pages`, and `tests`, TypeScript and all four framework checks passed. Live TC01 and TC02 passed. TC03 clicked Manual but eBay returned HTTP 403 on the filtered URL and its one retry; it failed in 20.8 seconds. The current report records this failure, not a successful full run.

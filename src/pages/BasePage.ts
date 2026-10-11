@@ -1,3 +1,4 @@
+import { CommonLocators } from '../locators/CommonLocators';
 import { Locator, Page, test } from '@playwright/test';
 import { logger } from '../utils/logger';
 
@@ -7,12 +8,10 @@ import { logger } from '../utils/logger';
  * is logged, waited for consistently, and appears as a named step in the report.
  */
 export abstract class BasePage {
-  readonly errorPageMessage: Locator;
-  readonly botChallengeHeading: Locator;
+  readonly commonLocators: CommonLocators;
 
   protected constructor(protected readonly page: Page) {
-    this.errorPageMessage = page.getByText('Something went wrong on our end');
-    this.botChallengeHeading = page.getByText('Pardon Our Interruption');
+    this.commonLocators = new CommonLocators(page);
   }
 
   /**
@@ -25,10 +24,10 @@ export abstract class BasePage {
     await this.waitForPageLoad();
     let waited = 0;
     for (let attempt = 1; ; attempt++) {
-      await readyLocator.or(this.errorPageMessage).or(this.botChallengeHeading).first().waitFor({ state: 'visible' });
+      await readyLocator.or(this.commonLocators.errorPageMessage).or(this.commonLocators.botChallengeHeading).first().waitFor({ state: 'visible' });
       if (await readyLocator.first().isVisible()) return;
 
-      if (await this.botChallengeHeading.isVisible()) {
+      if (await this.commonLocators.botChallengeHeading.isVisible()) {
         throw new Error('eBay is showing a bot-check page ("Pardon Our Interruption"). Wait a few minutes and re-run.');
       }
       if (waited >= maxWaitMs || attempt > 1) {

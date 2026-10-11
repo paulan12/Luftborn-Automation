@@ -12,14 +12,14 @@ test('page object reloads a transient server error and waits for the real page',
     });
   });
   await page.goto('https://example.test/');
-  await homePage.waitForPageReady(homePage.searchInput, 1);
-  await expect(homePage.searchInput).toBeVisible();
+  await homePage.waitForPageReady(homePage.locators.searchInput, 1);
+  await expect(homePage.locators.searchInput).toBeVisible();
   expect(requests).toBe(2);
 });
 
 test('persistent server errors fail rather than masquerade as successful results', async ({ page, homePage }) => {
   await page.setContent('<h1>Something went wrong on our end</h1>');
-  await expect(homePage.waitForPageReady(homePage.searchInput, 0)).rejects.toThrow('eBay kept returning its error page');
+  await expect(homePage.waitForPageReady(homePage.locators.searchInput, 0)).rejects.toThrow('eBay kept returning its error page');
 });
 
 test('persistent error stops after one retry even with a large backoff budget', async ({ page, homePage }) => {
@@ -29,6 +29,6 @@ test('persistent error stops after one retry even with a large backoff budget', 
     return route.fulfill({ status: 503, contentType: 'text/html', body: '<h1>Something went wrong on our end</h1>' });
   });
   await page.goto('https://example.test/');
-  await expect(homePage.waitForPageReady(homePage.searchInput, 180_000)).rejects.toThrow('across 1 reloads');
+  await expect(homePage.waitForPageReady(homePage.locators.searchInput, 180_000)).rejects.toThrow('across 1 reloads');
   expect(requests).toBe(2);
 });

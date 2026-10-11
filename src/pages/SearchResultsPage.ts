@@ -1,27 +1,60 @@
-import { Locator, Page, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
+import { SearchResultsLocators } from '../locators/SearchResultsLocators';
+import { logger } from '../utils/logger';
 import { BasePage } from './BasePage';
 
-const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 export class SearchResultsPage extends BasePage {
-  readonly resultCountHeading: Locator;
-  readonly resultItems: Locator;
-  readonly leftRail: Locator;
+  readonly locators: SearchResultsLocators;
 
   constructor(page: Page) {
     super(page);
-    this.resultCountHeading = page.locator('.srp-controls__count-heading').first();
-    this.resultItems = page.locator('ul.srp-results > li.s-card, ul.srp-results > li.s-item');
-    this.leftRail = page.locator('.srp-rail__left');
+    this.locators = new SearchResultsLocators(page);
+  }
+
+  async assertSearchResults(term: string, minimum: number): Promise<void> {
+    await test.step('Assert search results before filtering', async () => {
+      await expect(this.page).toHaveURL(/\/sch\//);
+      expect(new URL(this.page.url()).searchParams.get('_nkw')).toBe(term);
+      await expect(this.locators.resultCountHeading).toContainText(term, { ignoreCase: true });
+      await expect(this.locators.resultItems.first()).toBeVisible();
+      expect(await this.getResultCount()).toBeGreaterThanOrEqual(minimum);
+      logger.info(await this.getResultCountText());
+      logger.info(`Results listed on the first page: ${await this.getDisplayedItemCount()}`);
+      await this.takeScreenshot('search-results');
+    });
+  }
+
+  async assertFilterAvailable(group: string, value: string, minimum: number): Promise<void> {
+    await test.step('Assert sidebar count before selecting the filter', async () => {
+      await expect(this.locators.resultItems.first()).toBeVisible();
+      const count = await this.getFilterResultCount(group, value);
+      expect(count).toBeGreaterThanOrEqual(minimum);
+      logger.info(`Cars shown beside ${value} before selection: ${count}`);
+      await this.takeScreenshot('manual-count-before-filter');
+    });
+  }
+
+  async assertFilteredResults(group: string, value: string, minimum: number): Promise<void> {
+    await test.step('Assert selected filter and filtered results', async () => {
+      expect(this.isFilterInUrl(group, value), `URL should contain ${group}=${value}`).toBe(true);
+      await expect(this.locators.filterGroup(group)).toBeAttached();
+      await expect(this.locators.filterCheckbox(group, value)).toBeChecked();
+      await expect(this.locators.resultItems.first()).toBeVisible();
+      const count = await this.getFilterResultCount(group, value);
+      expect(count).toBeGreaterThanOrEqual(minimum);
+      logger.info(`Number of cars from the count beside ${value}: ${count}`);
+      logger.info(`Filtered results heading (separate from sidebar count): ${await this.getResultCountText()}`);
+      await this.takeScreenshot('filtered-results');
+    });
   }
 
   async waitForResults(): Promise<void> {
-    await this.waitForPageReady(this.resultCountHeading);
+    await this.waitForPageReady(this.locators.resultCountHeading);
   }
 
   /** Full heading text, e.g. "7,000+ results for mazda mx-5". */
   async getResultCountText(): Promise<string> {
-    return this.getText(this.resultCountHeading);
+    return this.getText(this.locators.resultCountHeading);
   }
 
   /** Numeric part of the result count heading, e.g. 7000 for "7,000+ results". */
@@ -40,41 +73,15 @@ export class SearchResultsPage extends BasePage {
   }
 
   async getDisplayedItemCount(): Promise<number> {
-    return this.resultItems.count();
-  }
-
-  // ---------- Left-rail filter locators ----------
-  // eBay renders each item-specific refinement as:
-  //   <fieldset><legend class="clipped">aspect-Transmission</legend>
-  //     <a class="su-selection-group__link"><input type="checkbox" value="Manual" ...> Manual</a> ...
-
-  filterGroup(group: string): Locator {
-    return this.leftRail
-      .locator('fieldset')
-      .filter({ has: this.page.locator('legend', { hasText: new RegExp(`^\\s*aspect-${escapeRegExp(group)}\\s*$`, 'i') }) });
-  }
-
-  filterGroupHeading(group: string): Locator {
-    return this.leftRail.getByText(group, { exact: true }).first();
-  }
-
-  filterOption(group: string, value: string): Locator {
-    return this.filterGroup(group)
-      .locator('a')
-      .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(value)}\\b`, 'i') })
-      .first();
-  }
-
-  filterCheckbox(group: string, value: string): Locator {
-    return this.filterGroup(group).locator(`input[type="checkbox"][value="${value}"]`);
+    return this.locators.resultItems.count();
   }
 
   /** Read the car count beside the sidebar option, for example Manual (47). */
   async getFilterResultCount(group: string, value: string): Promise<number> {
     return test.step(`Read count beside ${group} -> ${value}`, async () => {
-      const option = this.filterOption(group, value);
-      if (!(await this.isVisible(option, 2_000)) && await this.isVisible(this.filterGroupHeading(group))) {
-        await this.click(this.filterGroupHeading(group), `"${group}" filter group`);
+      const option = this.locators.filterOption(group, value);
+      if (!(await this.isVisible(option, 2_000)) && await this.isVisible(this.locators.filterGroupHeading(group))) {
+        await this.click(this.locators.filterGroupHeading(group), `"${group}" filter group`);
       }
       const label = (await this.getText(option)).replace(/\s+/g, ' ').trim();
       const match = label.match(/\(\s*([\d,]+)\s*\)/);
@@ -95,10 +102,10 @@ export class SearchResultsPage extends BasePage {
   }
 
   private async applyFilterFromLeftRail(group: string, value: string): Promise<boolean> {
-    const heading = this.filterGroupHeading(group);
-    if (!(await this.isVisible(heading)) && (await this.filterGroup(group).count()) === 0) return false;
+    const heading = this.locators.filterGroupHeading(group);
+    if (!(await this.isVisible(heading)) && (await this.locators.filterGroup(group).count()) === 0) return false;
 
-    const option = this.filterOption(group, value);
+    const option = this.locators.filterOption(group, value);
     if (!(await this.isVisible(option, 2_000)) && (await this.isVisible(heading, 1_000))) {
       // Collapsed group: expand it by clicking its heading.
       await this.click(heading, `"${group}" filter group`);
