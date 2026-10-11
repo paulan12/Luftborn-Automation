@@ -8,7 +8,7 @@ Each scenario produces three independent test cases in the report:
 
 1. **TC01 - Homepage:** Open https://www.ebay.com/ and verify the URL, title, logo and search controls.
 2. **TC02 - Search before filtering:** Open the homepage, set the isolated test session shipping destination from JSON, then search for `mazda mx-5`, verify the query, results heading and visible listings, and log the total reported by eBay and number of listings on the page. Rounded totals are labelled as lower bounds.
-3. **TC03 - Results after filtering:** Open the homepage, set the destination and search, then click `Transmission` > `Manual` in the left sidebar, verify the checked checkbox and URL refinement, and require visible results and a positive car count read directly from the number beside `Manual` in the sidebar. This count is logged before selection and after filtering; the results heading is logged separately.
+3. **TC03 - Results after filtering:** Open the homepage, set the destination and search, then click `Transmission` > `Manual` in the left sidebar, verify that the sidebar checkbox is checked, and require visible results and a positive car count read directly from the number beside `Manual` in the sidebar. This count is logged before selection and after filtering; the results heading is logged separately.
 
 There is no URL or dialog fallback for step 3. If eBay does not offer that sidebar control, the test fails instead of claiming to have completed the required interaction. Counts before/after are logged but not compared as a fixed invariant: live inventory and approximate counts can change.
 
@@ -116,3 +116,4 @@ The latest visible-browser TC03 run passed in 21.6 seconds (24.9 seconds includi
 ### Locator/assertion separation verification
 
 After separating `src/locators`, `src/pages`, and `tests`, TypeScript and all four framework checks passed. Live TC01 and TC02 passed. TC03 clicked Manual but eBay returned HTTP 403 on the filtered URL and its one retry; it failed in 20.8 seconds. The current report records this failure, not a successful full run.
+TC03 calls `selectFilterFromLeftSidebar()` to click the Manual option in the left rail. It does not construct a filter URL and no longer asserts URL filter parameters. eBay may change its own URL as a consequence of the click. A local regression check verifies an actual link click and selected-checkbox assertions without any Transmission URL parameter. The latest live TC03 attempt clicked Manual but received HTTP 403 from eBay; it did not pass.

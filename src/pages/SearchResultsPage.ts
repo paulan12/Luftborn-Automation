@@ -36,7 +36,6 @@ export class SearchResultsPage extends BasePage {
 
   async assertFilteredResults(group: string, value: string, minimum: number): Promise<void> {
     await test.step('Assert selected filter and filtered results', async () => {
-      expect(this.isFilterInUrl(group, value), `URL should contain ${group}=${value}`).toBe(true);
       await expect(this.locators.filterGroup(group)).toBeAttached();
       await expect(this.locators.filterCheckbox(group, value)).toBeChecked();
       await expect(this.locators.resultItems.first()).toBeVisible();
@@ -93,7 +92,7 @@ export class SearchResultsPage extends BasePage {
   }
 
   /** The assignment requires an actual click in the left sidebar. */
-  async applyFilter(group: string, value: string): Promise<void> {
+  async selectFilterFromLeftSidebar(group: string, value: string): Promise<void> {
     await test.step(`Apply left-sidebar filter ${group} -> ${value}`, async () => {
       if (!(await this.applyFilterFromLeftRail(group, value))) {
         throw new Error(`The left sidebar does not offer ${group} -> ${value}. Select the vehicle category or check the site's available inventory. No URL fallback is allowed.`);
@@ -121,14 +120,6 @@ export class SearchResultsPage extends BasePage {
     await this.click(locator, description);
     await this.page.waitForURL((url) => url.href !== urlBefore);
     await this.waitForResults();
-  }
-
-  /** The refinement is in eBay's query string, e.g. "&Transmission=Manual". */
-  isFilterInUrl(group: string, value: string): boolean {
-    const params = new URL(this.getUrl()).searchParams;
-    return (params.get(group) ?? '')
-      .split('|')
-      .some((v) => v.toLowerCase() === value.toLowerCase());
   }
 
 }

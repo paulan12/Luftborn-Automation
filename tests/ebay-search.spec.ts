@@ -23,7 +23,7 @@ for (const scenario of data.scenarios) {
       const resultsPage = await homePage.search(scenario.searchTerm);
       const { group, value } = scenario.filter;
       await resultsPage.assertFilterAvailable(group, value, scenario.minimumExpectedResults);
-      await resultsPage.applyFilter(group, value);
+      await resultsPage.selectFilterFromLeftSidebar(group, value);
       await resultsPage.assertFilteredResults(group, value, scenario.minimumExpectedResults);
     });
   });
