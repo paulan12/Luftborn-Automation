@@ -33,12 +33,8 @@ for (const scenario of data.scenarios) {
 
       const heading = await resultsPage.getResultCountText();
       const listedOnPage = await resultsPage.getDisplayedItemCount();
-      const approximate = await resultsPage.isResultCountApproximate();
-      logger.info(
-        `Number of search results for "${scenario.searchTerm}": ${total}` +
-          (approximate ? ' (eBay rounds large counts; this is a lower bound, e.g. "7,000+")' : ' (exact)') +
-          ` | heading: "${heading}"`,
-      );
+      // Print the visible heading shown above the search results, including the live count.
+      logger.info(heading);
       logger.info(`Results listed on the first page: ${listedOnPage}`);
       await resultsPage.takeScreenshot('search-results');
     });
