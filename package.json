@@ -8,7 +8,8 @@
     "report": "playwright show-report reports/html",
     "typecheck": "tsc --noEmit",
     "setup:browsers": "cross-env PLAYWRIGHT_BROWSERS_PATH=.playwright playwright install chromium ffmpeg",
-    "test:headed": "cross-env HEADLESS=false playwright test"
+    "test:headed": "cross-env HEADLESS=false playwright test",
+    "test:checks": "playwright test --config playwright.checks.config.ts"
   },
   "keywords": [
     "playwright",

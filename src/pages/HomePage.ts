@@ -22,17 +22,21 @@ export class HomePage extends BasePage {
 
   async setShippingDestination(country: string, postalCode: string): Promise<void> {
     await test.step(`Set test shipping destination to ${country}, ${postalCode}`, async () => {
-      // The intentional location dialog must not be dismissed by the popup handler.
-      await this.page.removeLocatorHandler(this.page.locator('[role="dialog"].address-dialog__lightbox'));
       const locationButton = this.page.locator('button.gh-ship-to__menu');
       await this.click(locationButton, 'shipping destination');
-      const dialog = this.page.frameLocator('[role="dialog"] iframe');
-      await dialog.getByRole('combobox', { name: 'Country or Region' }).selectOption({ label: country });
-      await dialog.getByRole('textbox', { name: 'Zipcode' }).fill(postalCode);
-      await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
-      await this.page.locator('[role="dialog"] iframe').waitFor({ state: 'hidden' });
-      await this.waitForPageReady(this.searchInput);
-      await registerPopupHandlers(this.page);
+      // Keep the handler active during the click so an existing or late popup cannot block it.
+      // Disable it only after opening the intentional dialog, and always restore it.
+      await this.page.removeLocatorHandler(this.page.locator('[role="dialog"].address-dialog__lightbox'));
+      try {
+        const dialog = this.page.frameLocator('[role="dialog"] iframe');
+        await dialog.getByRole('combobox', { name: 'Country or Region' }).selectOption({ label: country });
+        await dialog.getByRole('textbox', { name: 'Zipcode' }).fill(postalCode);
+        await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
+        await this.page.locator('[role="dialog"] iframe').waitFor({ state: 'hidden' });
+        await this.waitForPageReady(this.searchInput);
+      } finally {
+        await registerPopupHandlers(this.page);
+      }
     });
   }
 

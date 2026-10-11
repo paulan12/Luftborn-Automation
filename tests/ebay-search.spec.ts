@@ -1,17 +1,15 @@
 import { expect, test } from '../src/fixtures';
 import { HomePage } from '../src/pages/HomePage';
-import { SearchResultsPage } from '../src/pages/SearchResultsPage';
 import { logger } from '../src/utils/logger';
 import { EbaySearchData, readJson } from '../src/utils/testDataReader';
 
 const data = readJson<EbaySearchData>('ebay-search.json');
 
 for (const scenario of data.scenarios) {
-  test(`eBay search: ${scenario.name}`, async ({ page }) => {
-    const homePage = new HomePage(page);
-    let resultsPage: SearchResultsPage;
+  test.describe(`eBay search: ${scenario.name}`, () => {
 
-    await test.step('TC01 - Navigate to eBay and validate landing on the main page', async () => {
+    test('TC01 - Navigate to eBay and validate landing on the main page', async ({ page }) => {
+      const homePage = new HomePage(page);
       await homePage.open(data.baseUrl);
 
       await expect(page).toHaveURL(new RegExp(data.homePage.expectedUrlPattern));
@@ -22,9 +20,11 @@ for (const scenario of data.scenarios) {
       await homePage.takeScreenshot('home-page');
     });
 
-    await test.step(`TC02 - Search for "${scenario.searchTerm}", validate and print the number of results`, async () => {
+    test(`TC02 - Search for "${scenario.searchTerm}" and validate results before filtering`, async ({ page }) => {
+      const homePage = new HomePage(page);
+      await homePage.open(data.baseUrl);
       await homePage.setShippingDestination(data.shippingDestination.country, data.shippingDestination.postalCode);
-      resultsPage = await homePage.search(scenario.searchTerm);
+      const resultsPage = await homePage.search(scenario.searchTerm);
 
       await expect(page).toHaveURL(/\/sch\//);
       expect(new URL(page.url()).searchParams.get('_nkw')).toBe(scenario.searchTerm);
@@ -46,7 +46,12 @@ for (const scenario of data.scenarios) {
       await resultsPage.takeScreenshot('search-results');
     });
 
-    await test.step(`TC03 - Apply "${scenario.filter.group}" -> "${scenario.filter.value}" filter and validate it`, async () => {
+    test(`TC03 - Apply "${scenario.filter.group}" -> "${scenario.filter.value}" and validate filtered results`, async ({ page }) => {
+      const homePage = new HomePage(page);
+      await homePage.open(data.baseUrl);
+      await homePage.setShippingDestination(data.shippingDestination.country, data.shippingDestination.postalCode);
+      const resultsPage = await homePage.search(scenario.searchTerm);
+      await expect(resultsPage.resultItems.first()).toBeVisible();
       const { group, value } = scenario.filter;
       const countBefore = await resultsPage.getResultCount();
 
