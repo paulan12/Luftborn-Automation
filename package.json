@@ -1,0 +1,29 @@
+{
+  "name": "luftborn-automation",
+  "version": "1.0.0",
+  "description": "Web UI test automation framework (Playwright + TypeScript, Page Object Model) for eBay search flows",
+  "scripts": {
+    "test": "playwright test",
+    "test:headless": "cross-env HEADLESS=true playwright test",
+    "report": "playwright show-report reports/html",
+    "typecheck": "tsc --noEmit",
+    "setup:browsers": "cross-env PLAYWRIGHT_BROWSERS_PATH=.playwright playwright install chromium ffmpeg",
+    "test:headed": "cross-env HEADLESS=false playwright test"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "page-object-model",
+    "e2e",
+    "ebay"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5",
+    "cross-env": "^10.1.0",
+    "typescript": "^7.0.2"
+  }
+}

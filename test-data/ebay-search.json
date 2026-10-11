@@ -1,0 +1,22 @@
+{
+  "baseUrl": "https://www.ebay.com/",
+  "homePage": {
+    "expectedTitle": "Electronics, Cars, Fashion, Collectibles & More | eBay",
+    "expectedUrlPattern": "^https://www\\.ebay\\.com/?$"
+  },
+  "scenarios": [
+    {
+      "name": "Search for Mazda MX-5 and filter by manual transmission",
+      "searchTerm": "mazda mx-5",
+      "minimumExpectedResults": 1,
+      "filter": {
+        "group": "Transmission",
+        "value": "Manual"
+      }
+    }
+  ],
+  "shippingDestination": {
+    "country": "United States",
+    "postalCode": "10001"
+  }
+}
