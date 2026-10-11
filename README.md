@@ -78,7 +78,7 @@ The separate `test:checks` command runs an offline regression test for the shipp
 
 - Missing browser/FFmpeg: run `npm.cmd run setup:browsers`.
 - Connection/download denied: allow access to the Playwright download host and eBay, then retry.
-- eBay error page: The recorded TC03 failure occurred after clicking Manual: eBay repeatedly returned its "Something went wrong" page. Recovery time is not guaranteed. The framework reloads with bounded backoff (up to 3 minutes per page), then fails with a diagnostic. `BROWSER_CHANNEL=chrome` is available as an optional browser choice. A bot challenge fails explicitly; no bypass is attempted.
+- eBay error page: The recorded TC03 failure occurred after clicking Manual: eBay repeatedly returned its "Something went wrong" page. Recovery time is not guaranteed. The framework waits five seconds and reloads at most once per failed page, then fails with a diagnostic. Navigation time is separate; each complete test is capped at three minutes and automatic whole-test retries are disabled. `BROWSER_CHANNEL=chrome` is available as an optional browser choice. A bot challenge fails explicitly; no bypass is attempted.
 - Missing Transmission sidebar: inspect the screenshot/trace and the category/inventory eBay actually returned. Parts/accessories search results may not offer vehicle transmission filters. The framework must not manufacture a selected filter using URL parameters.
 - Title/markup changes: inspect the report before updating external expectations or page object selectors.
 
@@ -104,3 +104,9 @@ The source is published to the private paulan12 repository linked above. The lit
 ### Sidebar car-count verification
 
 The subsequent TC03-only run on 2026-10-11 passed with the JSON-configured US destination. It read 46 beside Manual before clicking and 47 beside the selected Manual option after navigation. The heading was logged separately. The two observed sidebar values are not assumed equal across page loads. The latest generated report contains this TC03-only verification; run the full suite to regenerate all three cases.
+
+### Slow error-page handling
+
+The previous policy could wait three minutes per error page and ten minutes per test. It now retries an error page only once after five seconds. Every live test attaches `page-response-statuses` with main-document URLs and HTTP statuses; HTTP errors are also logged. A persistent-error regression test verified exactly one reload.
+
+The latest visible-browser TC03 run passed in 21.6 seconds (24.9 seconds including runner overhead), reporting 47 beside Manual before clicking and 46 after. No error page occurred in that run. This limits waiting; it does not guarantee that eBay will stop returning errors. The manual browser and isolated test session have different session state, and the exact reason for the intermittent site error remains unconfirmed.

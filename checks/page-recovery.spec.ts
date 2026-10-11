@@ -21,3 +21,14 @@ test('persistent server errors fail rather than masquerade as successful results
   await page.setContent('<h1>Something went wrong on our end</h1>');
   await expect(homePage.waitForPageReady(homePage.searchInput, 0)).rejects.toThrow('eBay kept returning its error page');
 });
+
+test('persistent error stops after one retry even with a large backoff budget', async ({ page, homePage }) => {
+  let requests = 0;
+  await page.route('https://example.test/', route => {
+    requests++;
+    return route.fulfill({ status: 503, contentType: 'text/html', body: '<h1>Something went wrong on our end</h1>' });
+  });
+  await page.goto('https://example.test/');
+  await expect(homePage.waitForPageReady(homePage.searchInput, 180_000)).rejects.toThrow('across 1 reloads');
+  expect(requests).toBe(2);
+});

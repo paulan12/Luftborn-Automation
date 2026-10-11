@@ -18,9 +18,10 @@ export abstract class BasePage {
   /**
    * Waits for real page content and retries the observed server-error page with bounded backoff.
    * The generic error message alone does not establish an HTTP status or guarantee recovery.
+   * Retry at most once; the default backoff is five seconds.
    * `maxWaitMs` bounds backoff time; navigation/action timeouts apply separately.
    */
-  async waitForPageReady(readyLocator: Locator, maxWaitMs = 180_000): Promise<void> {
+  async waitForPageReady(readyLocator: Locator, maxWaitMs = 5_000): Promise<void> {
     await this.waitForPageLoad();
     let waited = 0;
     for (let attempt = 1; ; attempt++) {
@@ -30,13 +31,13 @@ export abstract class BasePage {
       if (await this.botChallengeHeading.isVisible()) {
         throw new Error('eBay is showing a bot-check page ("Pardon Our Interruption"). Wait a few minutes and re-run.');
       }
-      if (waited >= maxWaitMs) {
+      if (waited >= maxWaitMs || attempt > 1) {
         throw new Error(
           `eBay kept returning its error page after waiting ${waited / 1000}s across ${attempt - 1} reloads. ` +
             'Inspect the trace network responses and retry later; the site did not return usable content.',
         );
       }
-      const delay = Math.min(attempt * 15_000, 60_000, maxWaitMs - waited);
+      const delay = Math.min(5_000, maxWaitMs - waited);
       logger.warn(`eBay returned "Something went wrong" page, reloading in ${delay / 1000}s (waited ${waited / 1000}s of ${maxWaitMs / 1000}s)`);
       await this.page.waitForTimeout(delay);
       waited += delay;
