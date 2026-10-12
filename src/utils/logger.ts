@@ -1,24 +1,24 @@
 import { test } from '@playwright/test';
 
 /**
- * Logs to the console and records the message as an annotation on the running test,
- * so it also shows up in the HTML execution report.
+ * Keep diagnostics in the HTML report; only car counts go to the console.
  */
 export const logger = {
   info(message: string): void {
-    console.log(`[INFO] ${new Date().toISOString()} ${message}`);
     try {
       test.info().annotations.push({ type: 'info', description: message });
     } catch {
-      // Called outside a running test: console output only.
+      // No report is available outside a running test.
     }
   },
   warn(message: string): void {
-    console.warn(`[WARN] ${new Date().toISOString()} ${message}`);
     try {
       test.info().annotations.push({ type: 'warning', description: message });
     } catch {
-      // Called outside a running test: console output only.
+      // No report is available outside a running test.
     }
+  },
+  carCount(count: number): void {
+    console.log(count);
   },
 };

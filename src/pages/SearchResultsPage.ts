@@ -17,7 +17,9 @@ export class SearchResultsPage extends BasePage {
       expect(new URL(this.page.url()).searchParams.get('_nkw')).toBe(term);
       await expect(this.locators.resultCountHeading).toContainText(term, { ignoreCase: true });
       await expect(this.locators.resultItems.first()).toBeVisible();
-      expect(await this.getResultCount()).toBeGreaterThanOrEqual(minimum);
+      const count = await this.getResultCount();
+      expect(count).toBeGreaterThanOrEqual(minimum);
+      logger.carCount(count);
       logger.info(await this.getResultCountText());
       logger.info(`Results listed on the first page: ${await this.getDisplayedItemCount()}`);
       await this.takeScreenshot('search-results');
@@ -30,6 +32,7 @@ export class SearchResultsPage extends BasePage {
       const count = await this.getFilterResultCount(group, value);
       expect(count).toBeGreaterThanOrEqual(minimum);
       logger.info(`Cars shown beside ${value} before selection: ${count}`);
+      logger.carCount(count);
       await this.takeScreenshot('manual-count-before-filter');
     });
   }
@@ -42,6 +45,7 @@ export class SearchResultsPage extends BasePage {
       const count = await this.getFilterResultCount(group, value);
       expect(count).toBeGreaterThanOrEqual(minimum);
       logger.info(`Number of cars from the count beside ${value}: ${count}`);
+      logger.carCount(count);
       logger.info(`Filtered results heading (separate from sidebar count): ${await this.getResultCountText()}`);
       await this.takeScreenshot('filtered-results');
     });

@@ -78,6 +78,14 @@ The separate `test:checks` command runs an offline regression test for the shipp
 
 ## Troubleshooting
 
+### Latest network verification (2026-10-12)
+
+All three live cases passed with `npm.cmd run test:headed` in 38.5 seconds: TC01 in 3.1s, TC02 in 16.2s, and TC03 in 16.9s. Search returned 70 results; clicking Manual returned 48 filtered results. No HTTP 403 or other HTTP error responses were observed in this run. This is an observation, not a guarantee against the previously observed intermittent eBay 403.
+
+Each test now includes a `network-diagnostics` JSON attachment covering HTTP errors across the browser context (including iframes and background requests), with URL, status, method, resource type and timestamp. Transport failures are recorded separately. TC02 recorded 39 `ERR_ABORTED` requests; TC03 recorded 47 `ERR_ABORTED` and two `ERR_BLOCKED_BY_CLIENT` requests. These are not HTTP 403 responses and did not prevent the scenario assertions from passing. Most affected requests were to advertising/tracking hosts.
+
+The initial sandboxed attempt failed before receiving HTTP responses with `ERR_NETWORK_ACCESS_DENIED`; the successful run used approved network access outside that sandbox. TypeScript checking and all six offline framework checks passed, including a new regression check for iframe/fetch 403 detection and transport-failure reporting.
+
 - Missing browser/FFmpeg: run `npm.cmd run setup:browsers`.
 - Connection/download denied: allow access to the Playwright download host and eBay, then retry.
 - eBay error page: The recorded TC03 failure occurred after clicking Manual: eBay repeatedly returned its "Something went wrong" page. Recovery time is not guaranteed. The framework waits five seconds and reloads at most once per failed page, then fails with a diagnostic. Navigation time is separate; each complete test is capped at three minutes and automatic whole-test retries are disabled. `BROWSER_CHANNEL=chrome` is available as an optional browser choice. A bot challenge fails explicitly; no bypass is attempted.
@@ -86,7 +94,7 @@ The separate `test:checks` command runs an offline regression test for the shipp
 
 ## Publication and submission
 
-Repository: https://github.com/paulan12/Luftborn-Automation (private). Grant your reviewer access before sharing the submission URL. Do not include dependencies, browser binaries or secrets in Git; `.gitignore` excludes generated output.
+Repository: https://github.com/paulan12/Luftborn-Automation (public). Share this URL with your reviewer. Do not include dependencies, browser binaries or secrets in Git; `.gitignore` excludes generated output.
 
 After obtaining a successful run and the full desktop recording, create the ZIP:
 
@@ -101,7 +109,7 @@ On 2026-10-11, the POM refactor passed TypeScript checking, three offline framew
 
 The earlier TC03 report showed repeated eBay error pages after the Manual click. The current bounded backoff allows recovery but cannot guarantee availability of the external site. Persistent errors still fail the test.
 
-The source is published to the private paulan12 repository linked above. The literal desktop launch-to-close recording remains a separate submission step.
+The source is published to the public paulan12 repository linked above. The literal desktop launch-to-close recording remains a separate submission step.
 
 ### Sidebar car-count verification
 
